@@ -5,12 +5,13 @@ Translate Chinese to Vietnamese via chivi.app api.
 ## Build
 
 ```
-npn install && npn run build
+npm install --global pnpm # install pnpm
+pnpm install && pnpm run build
 ```
 
 ## Environment
 
 ```
 node -v # v16.13.2
-npn -v # 8.1.2
+pnpm -v # 6.26.1
 ```
