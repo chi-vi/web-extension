@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "manifest_version": 2,
   "permissions": [
-    "activeTab"
+    "storage",
+    "activeTab",
+    "webRequest",
+    "https://chivi.app/api/qtran"
   ],
   "action": {
     "default_title": "Chivi MTL",
