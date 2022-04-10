@@ -1,0 +1,31 @@
+{
+  "name": "Chivi MTL",
+  "description": "Translate Chinese to Vietnamese in browser",
+  "version": "1.0.0",
+  "manifest_version": 2,
+  "permissions": [
+    "activeTab"
+  ],
+  "action": {
+    "default_title": "Chivi MTL",
+    "default_icon": "favicon.png",
+    "default_popup": "index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
+        "build/injection.js"
+      ],
+      "css": [
+        "build/translate.css"
+      ]
+    }
+  ],
+  "icons": {
+    "48": "icons/logo-48.png",
+    "96": "icons/logo-96.png"
+  }
+}

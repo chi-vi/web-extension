@@ -1,0 +1,23 @@
+.cv-btn {
+  position: fixed;
+
+  display: flex;
+  z-index: 99999;
+  left: .5rem;
+  bottom: .5rem;
+
+  border: none;
+  width: 1.75rem;
+  height: 1.75rem;
+
+  background: rgba(#0b5b89, .5);
+  cursor: pointer;
+  color: white;
+
+  border-radius: 2px;
+  padding: .25rem;
+
+  &:hover {
+    background: #0d75b5;
+  }
+}

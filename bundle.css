@@ -1,0 +1,14 @@
+.cv-btn {
+  position: fixed;
+  display: flex;
+  z-index: 99999;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: #0b5b89;
+  padding: 0;
+  color: white; }
+  .cv-btn:hover {
+    background: #0d75b5; }
