@@ -1,17 +1,74 @@
 // import browser from 'webextension-polyfill'
-import { query } from './lib/query'
+
+const whilelist = [
+  'UL',
+  'OL',
+  'LI',
+  'DIV',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'P',
+]
+
+const blacklist = [
+  'svg',
+  'BODY',
+  'SCRIPT',
+  'STYLE',
+  'FORM',
+  'TABLE',
+  'THEAD',
+  'TBODY',
+  'TR',
+  'CODE',
+  'PRE',
+]
+
+function should_inject(node) {
+  const name = node.nodeName
+
+  if (blacklist.includes(name)) return false
+  if (!whilelist.includes(name)) console.log(name)
+
+  return true
+}
+function scan_nodes(document, target = document.body) {
+  let nodes = []
+  let texts = []
+
+  const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT, null)
+
+  var node
+  while ((node = walker.nextNode())) {
+    if (!should_inject(node.parentNode)) continue
+
+    const text = node.textContent.trim()
+    if (text.match(/\p{Script=Han}/u)) {
+      texts.push(text)
+      nodes.push(node)
+    }
+  }
+
+  return { nodes, texts }
+}
+
+browser = typeof browser == 'object' ? browser : chrome
+
+const dname = browser.storage.local.get('dname') || 'combine'
+const trad = browser.storage.local.get('trad') || true
 
 async function translate() {
-  const { nodes, texts } = query(document, document.body)
+  const { nodes, texts } = scan_nodes(document)
 
+  const params = { input: texts.join('\n'), mode: 'plain', dname, trad }
   const res = await fetch('https://chivi.app/api/qtran', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      input: texts.join('\n'),
-      dname: 'combine',
-      mode: 'plain',
-    }),
+    body: JSON.stringify(params),
   })
 
   if (!res.ok) {
@@ -23,9 +80,16 @@ async function translate() {
 
   data.split('\n').forEach((line, idx) => {
     const node = nodes[idx]
-    node.textContent = line
-    node.parentNode.style.fontFamily = 'Roboto, san-serif'
-    node.parentNode.style.lineHeight = '1.5em'
+
+    if (node) {
+      node.textContent = line
+      const parent = node.parentNode
+
+      if (whilelist.includes(parent.nodeName)) {
+        parent.style.fontFamily = 'Roboto, san-serif'
+        parent.style.lineHeight = '1.5em'
+      }
+    }
   })
 }
 
