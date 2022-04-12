@@ -16,26 +16,18 @@ const whilelist = [
 
 const blacklist = [
   'svg',
-  'BODY',
   'SCRIPT',
   'STYLE',
-  'FORM',
-  'TABLE',
-  'THEAD',
-  'TBODY',
-  'TR',
-  'CODE',
-  'PRE',
+  // 'BODY',
+  // 'FORM',
+  // 'TABLE',
+  // 'THEAD',
+  // 'TBODY',
+  // 'TR',
+  // 'CODE',
+  // 'PRE',
 ]
 
-function should_inject(node) {
-  const name = node.nodeName
-
-  if (blacklist.includes(name)) return false
-  if (!whilelist.includes(name)) console.log(name)
-
-  return true
-}
 function scan_nodes(document, target = document.body) {
   let nodes = []
   let texts = []
@@ -44,27 +36,32 @@ function scan_nodes(document, target = document.body) {
 
   var node
   while ((node = walker.nextNode())) {
-    if (!should_inject(node.parentNode)) continue
+    if (blacklist.includes(node.parentNode)) continue
 
     const text = node.textContent.trim()
-    if (text.match(/\p{Script=Han}/u)) {
-      texts.push(text)
-      nodes.push(node)
-    }
+    if (!text.match(/\p{Script=Han}/u)) continue
+
+    texts.push(text.replaceAll('\n', '\t'))
+    nodes.push(node)
   }
 
   return { nodes, texts }
 }
 
+async function get_storage(key, _df) {
+  const store = await browser.storage.local.get('dname')
+  return store[key] || _df
+}
+
 browser = typeof browser == 'object' ? browser : chrome
 
-const dname = browser.storage.local.get('dname') || 'combine'
-const trad = browser.storage.local.get('trad') || true
-
 async function translate() {
-  const { nodes, texts } = scan_nodes(document)
+  const dname = await get_storage('dname', 'combine')
+  const trad = await get_storage('trad', true)
 
+  const { nodes, texts } = scan_nodes(document)
   const params = { input: texts.join('\n'), mode: 'plain', dname, trad }
+
   const res = await fetch('https://chivi.app/api/qtran', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -77,18 +74,18 @@ async function translate() {
   }
 
   const data = await res.text()
+  const lines = data.split('\n')
 
-  data.split('\n').forEach((line, idx) => {
+  lines.forEach((line, idx) => {
     const node = nodes[idx]
+    if (!node) return
 
-    if (node) {
-      node.textContent = line
-      const parent = node.parentNode
+    node.textContent = line.replaceAll('\t', '\n')
+    const parent = node.parentNode
 
-      if (whilelist.includes(parent.nodeName)) {
-        parent.style.fontFamily = 'Roboto, san-serif'
-        parent.style.lineHeight = '1.5em'
-      }
+    if (whilelist.includes(parent.nodeName)) {
+      parent.style.fontFamily = 'Roboto, san-serif'
+      parent.style.lineHeight = '1.5em'
     }
   })
 }
