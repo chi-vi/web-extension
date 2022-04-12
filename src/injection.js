@@ -48,18 +48,12 @@ function scan_nodes(document, target = document.body) {
   return { nodes, texts }
 }
 
-async function get_storage(key, _df) {
-  const store = await browser.storage.local.get('dname')
-  return store[key] || _df
-}
-
-browser = typeof browser == 'object' ? browser : chrome
-
 async function translate() {
-  const dname = await get_storage('dname', 'combine')
-  const trad = await get_storage('trad', true)
-
   const { nodes, texts } = scan_nodes(document)
+
+  const browser = globalThis.browser || globalThis.chrome
+  const storage = await browser.storage.local.get('chivi-mtl')
+  const { dname = 'combine', trad = true } = storage
   const params = { input: texts.join('\n'), mode: 'plain', dname, trad }
 
   const res = await fetch('https://chivi.app/api/qtran', {
