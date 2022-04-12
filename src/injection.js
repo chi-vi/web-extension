@@ -1,32 +1,7 @@
 // import browser from 'webextension-polyfill'
 
-const whilelist = [
-  'UL',
-  'OL',
-  'LI',
-  'DIV',
-  'H1',
-  'H2',
-  'H3',
-  'H4',
-  'H5',
-  'H6',
-  'P',
-]
-
-const blacklist = [
-  'svg',
-  'SCRIPT',
-  'STYLE',
-  // 'BODY',
-  // 'FORM',
-  // 'TABLE',
-  // 'THEAD',
-  // 'TBODY',
-  // 'TR',
-  // 'CODE',
-  // 'PRE',
-]
+const whilelist = ['UL', 'OL', 'LI', 'DIV', 'P']
+const blacklist = ['svg', 'SCRIPT', 'STYLE']
 
 function scan_nodes(document, target = document.body) {
   let nodes = []
@@ -36,12 +11,12 @@ function scan_nodes(document, target = document.body) {
 
   var node
   while ((node = walker.nextNode())) {
-    if (blacklist.includes(node.parentNode)) continue
+    if (blacklist.includes(node.parentNode.nodeName)) continue
 
     const text = node.textContent.trim()
     if (!text.match(/\p{Script=Han}/u)) continue
 
-    texts.push(text.replaceAll('\n', '\t'))
+    texts.push(text.replaceAll('\n', ' \t·\t'))
     nodes.push(node)
   }
 
@@ -74,7 +49,7 @@ async function translate() {
     const node = nodes[idx]
     if (!node) return
 
-    node.textContent = line.replaceAll('\t', '\n')
+    node.textContent = line.replaceAll('·\t', '\n')
     const parent = node.parentNode
 
     if (whilelist.includes(parent.nodeName)) {
