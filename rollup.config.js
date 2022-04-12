@@ -1,79 +1,27 @@
 import svelte from 'rollup-plugin-svelte'
 import commonjs from '@rollup/plugin-commonjs'
 import resolve from '@rollup/plugin-node-resolve'
-import livereload from 'rollup-plugin-livereload'
 import { terser } from 'rollup-plugin-terser'
 import css from 'rollup-plugin-css-only'
 import scss from 'rollup-plugin-scss'
+import copy from 'rollup-plugin-copy'
 
 const production = !process.env.ROLLUP_WATCH
 
-function serve() {
-  let server
-
-  function toExit() {
-    if (server) server.kill(0)
-  }
-
-  return {
-    writeBundle() {
-      if (server) return
-      server = require('child_process').spawn(
-        'npm',
-        ['run', 'start', '--', '--dev'],
-        {
-          stdio: ['ignore', 'inherit', 'inherit'],
-          shell: true,
-        }
-      )
-
-      process.on('SIGTERM', toExit)
-      process.on('exit', toExit)
-    },
-  }
-}
-
 export default [
   {
-    input: 'src/main.js',
+    input: 'src/popup.js',
     output: {
-      sourcemap: true,
+      sourcemap: false,
       format: 'iife',
-      name: 'app',
-      file: 'public/build/bundle.js',
+      name: 'popup',
+      file: 'build/popup.js',
     },
     plugins: [
-      svelte({
-        compilerOptions: {
-          // enable run-time checks when not in production
-          dev: !production,
-        },
-      }),
-      // we'll extract any component CSS out into
-      // a separate file - better for performance
-      css({ output: 'bundle.css' }),
-
-      // If you have external dependencies installed from
-      // npm, you'll most likely need these plugins. In
-      // some cases you'll need additional configuration -
-      // consult the documentation for details:
-      // https://github.com/rollup/plugins/tree/master/packages/commonjs
-      resolve({
-        browser: true,
-        dedupe: ['svelte'],
-      }),
+      svelte({ compilerOptions: { dev: !production } }),
+      css({ output: 'popup.css' }),
+      resolve({ browser: true, dedupe: ['svelte'] }),
       commonjs(),
-
-      // In dev mode, call `npm run start` once
-      // the bundle has been generated
-      !production && serve(),
-
-      // Watch the `public` directory and refresh the
-      // browser on changes when not in production
-      !production && livereload('public'),
-
-      // If we're building for production (npm run build
-      // instead of npm run dev), minify
       production && terser(),
     ],
     watch: {
@@ -83,25 +31,40 @@ export default [
   {
     input: 'src/injection.js',
     output: {
-      sourcemap: true,
+      sourcemap: false,
       format: 'iife',
-      file: 'public/build/injection.js',
+      name: 'injection',
+      file: 'build/injection.js',
     },
-    plugins: [resolve(), commonjs()],
-    watch: {
-      clearScreen: false,
-    },
+    plugins: [
+      copy({
+        targets: [
+          {
+            src: ['public/*', 'build/*'],
+            dest: ['firefox-ext', 'chromium-ext'],
+          },
+          {
+            src: 'src/manifest-v2.json',
+            dest: 'firefox-ext',
+            rename: 'manifest.json',
+          },
+          {
+            src: 'src/manifest-v3.json',
+            dest: 'chromium-ext',
+            rename: 'manifest.json',
+          },
+        ],
+      }),
+      resolve(),
+      commonjs(),
+      production && terser(),
+    ],
+    watch: { clearScreen: false },
   },
   {
-    input: 'src/translate.scss',
-
-    plugins: [
-      scss({
-        output: 'public/build/translate.css',
-      }),
-    ],
-    watch: {
-      clearScreen: false,
-    },
+    input: 'src/injection.scss',
+    output: { sourcemap: false, file: 'public/injection.css' },
+    plugins: [scss({ output: 'build/injection.css' })],
+    watch: { clearScreen: false },
   },
 ]

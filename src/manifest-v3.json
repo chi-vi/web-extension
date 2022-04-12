@@ -2,23 +2,21 @@
   "name": "Chivi MTL",
   "description": "Translate Chinese to Vietnamese in browser",
   "version": "1.0.1",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "permissions": [
     "storage",
     "activeTab",
-    "webRequest",
+    "webRequest"
+  ],
+  "host_permissions": [
     "https://chivi.app/api/qtran"
   ],
   "action": {
     "default_title": "Chivi MTL",
     "default_icon": "favicon.png",
-    "default_popup": "index.html"
+    "default_popup": "popup.html"
   },
   "browser_specific_settings": {
-    "gecko": {
-      "id": "{3bfd90c6-7097-4be3-b08c-8ed279146fbe}",
-      "strict_min_version": "42.0"
-    },
     "safari": {
       "strict_min_version": "14"
     }
@@ -29,10 +27,10 @@
         "https://*/*"
       ],
       "js": [
-        "build/injection.js"
+        "injection.js"
       ],
       "css": [
-        "build/translate.css"
+        "injection.css"
       ]
     }
   ],
