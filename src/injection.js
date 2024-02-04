@@ -6,6 +6,7 @@ const blacklist = ['svg', 'SCRIPT', 'STYLE']
 function scan_nodes(document, target = document.body) {
   let nodes = []
   let texts = []
+  let count = 0
 
   const walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT, null)
 
@@ -13,43 +14,38 @@ function scan_nodes(document, target = document.body) {
   while ((node = walker.nextNode())) {
     if (blacklist.includes(node.parentNode.nodeName)) continue
 
-    const text = node.textContent.trim()
+    const text = node.textContent
     if (!text.match(/\p{Script=Han}/u)) continue
 
-    texts.push(text.replaceAll('\n', ' \t·\t'))
+    count += text.size
+    if (count > 4000) break
+
+    texts.push(text.replaceAll('\n', '··').trim())
     nodes.push(node)
   }
 
   return { nodes, texts }
 }
 
+const endpoint = 'https://chivi.app/api/qtran'
 async function translate() {
   const { nodes, texts } = scan_nodes(document)
 
-  const browser = globalThis.browser || globalThis.chrome
-  const storage = await browser.storage.local.get('chivi-mtl')
-  const { dname = 'combine', trad = true } = storage
-  const params = { input: texts.join('\n'), mode: 'plain', dname, trad }
+  // const browser = globalThis.browser || globalThis.chrome
+  // const storage = await browser.storage.local.get('chivi-mtl')
+  // const { dname = 'combine' } = storage
 
-  const res = await fetch('https://chivi.app/api/qtran', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  })
-
-  if (!res.ok) {
-    alert('Có lỗi, mời liên hệ người phát triển!')
-    return
-  }
-
+  const res = await fetch(endpoint, { method: 'POST', body: texts.join('\n') })
   const data = await res.text()
+  if (!res.ok) return alert(data)
+
   const lines = data.split('\n')
 
   lines.forEach((line, idx) => {
     const node = nodes[idx]
     if (!node) return
 
-    node.textContent = line.replaceAll('·\t', '\n')
+    node.textContent = line.replaceAll('··', '\n')
     const parent = node.parentNode
 
     if (whilelist.includes(parent.nodeName)) {
